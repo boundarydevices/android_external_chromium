@@ -10,6 +10,10 @@
 #include "base/values.h"
 #include "net/proxy/proxy_info.h"
 
+#define FSL_ETHERNET_PROXY
+#include <cutils/properties.h>
+#include <cutils/log.h>
+
 namespace net {
 
 namespace {
@@ -33,6 +37,19 @@ ProxyConfig::ProxyRules::~ProxyRules() {
 }
 
 void ProxyConfig::ProxyRules::Apply(const GURL& url, ProxyInfo* result) {
+#if defined(FSL_ETHERNET_PROXY)
+  char proxy[256];
+  proxy[0] = 0;
+
+  property_get("net.proxy", proxy, ""); // format: wwwgate0-az.freescale.net:1080;
+
+  if(strcmp(proxy, "null") == 0) {
+    // set by command "setprop net.proxy null" to clear previous value
+    proxy[0] = 0;
+  }
+  ParseFromString(proxy);
+#endif
+
   if (empty()) {
     result->UseDirect();
     return;
